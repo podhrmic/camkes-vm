@@ -10,4 +10,4 @@
 # @TAG(D61_GPL)
 #
 
-VM_NUM_VM := 2
+VM_NUM_VM := 1
