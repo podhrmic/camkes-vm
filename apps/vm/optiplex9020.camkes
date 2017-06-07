@@ -69,5 +69,9 @@ component VM {
 
         vm0.dp2_id = 2;
         vm0.dp2_size = STRING_REVERSE_BUFSIZE;
+
+        // For VESA vframebuffer
+        vm0.untyped_mmios = ["0xfd000000:23"]; // 32-bit, size=16MB
+        vm0.simple_extra_bootinfo = ["SEL4_BOOTINFO_HEADER_X86_VBE"];
     }
 }
