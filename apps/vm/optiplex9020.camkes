@@ -73,5 +73,24 @@ component VM {
         // For VESA vframebuffer
         vm0.untyped_mmios = ["0xfd000000:23"]; // 32-bit, size=16MB
         vm0.simple_extra_bootinfo = ["SEL4_BOOTINFO_HEADER_X86_VBE"];
+
+        vm0_config.ioports = [
+            {"start":0xc000, "end":0xc040, "pci_device":0, "name":"Ethernet5"},
+        ];
+
+        vm0_config.pci_devices = [
+        {
+            "name":"Ethernet5",
+            "bus":0, "dev":3, "fun":0,
+            "irq":"Ethernet5",
+            "memory":[
+                {"paddr":0xfebc0000, "size":0x20000, "page_bits":12},
+            ],
+        },
+        ];
+        vm0_config.irqs = [
+            {"name":"Ethernet5", "source":0x1, "level_trig":1, "active_low":1, "dest":11},
+        ];
+
     }
 }
