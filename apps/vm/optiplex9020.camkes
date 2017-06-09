@@ -74,11 +74,20 @@ component VM {
         vm0.untyped_mmios = ["0xfd000000:23"]; // 32-bit, size=16MB
         vm0.simple_extra_bootinfo = ["SEL4_BOOTINFO_HEADER_X86_VBE"];
 
+
         vm0_config.ioports = [
             {"start":0xc000, "end":0xc040, "pci_device":0, "name":"Ethernet5"},
         ];
 
         vm0_config.pci_devices = [
+        {
+            "name":"USB1",
+            "bus":0, "dev":0x04, "fun":0,
+            "irq":"USB1",
+            "memory":[
+                {"paddr":0xfebf1000, "size":0x1000, "page_bits":12},
+            ],
+        },
         {
             "name":"Ethernet5",
             "bus":0, "dev":3, "fun":0,
@@ -89,7 +98,8 @@ component VM {
         },
         ];
         vm0_config.irqs = [
-            {"name":"Ethernet5", "source":0x1, "level_trig":1, "active_low":1, "dest":11},
+            {"name":"USB1", "source":11, "level_trig":1, "active_low":1, "dest":13},
+            {"name":"Ethernet5", "source":11, "level_trig":1, "active_low":1, "dest":10},
         ];
 
     }
