@@ -105,15 +105,19 @@ void *client_buf(unsigned int client_id);
 void client_get_mac(unsigned int client_id, uint8_t *mac);
 
 static void init_system(void) {
+    printf("Ethernet init system\n");
     int error;
 
     /* Camkes adds nothing to our address space, so this array is empty */
     void *existing_frames[] = {
         NULL
     };
+
+    printf("Ethernet Making camkes_simple\n");
     camkes_make_simple(&camkes_simple);
 
     /* Initialize allocator */
+    printf("Ethernet bootstrap_use_current_1level\n");
     allocman = bootstrap_use_current_1level(
             simple_get_cnode(&camkes_simple),
             simple_get_cnode_size_bits(&camkes_simple),
@@ -121,11 +125,14 @@ static void init_system(void) {
             BIT(simple_get_cnode_size_bits(&camkes_simple)),
             sizeof(allocator_mempool), allocator_mempool
     );
+
     assert(allocman);
+    printf("Ethernet allocman_add_simple_untypeds\n");
     error = allocman_add_simple_untypeds(allocman, &camkes_simple);
     allocman_make_vka(&vka, allocman);
 
     /* Initialize the vspace */
+    printf("Ethernet sel4utils_bootstrap_vspace\n");
     error = sel4utils_bootstrap_vspace(&vspace, &vspace_data,
             simple_get_init_cap(&camkes_simple, seL4_CapInitThreadPD), &vka, NULL, NULL, existing_frames);
     assert(!error);
@@ -381,10 +388,43 @@ void post_init(void) {
     cspacepath_t iospace;
     error = vka_cspace_alloc_path(&vka, &iospace);
     assert(!error);
-    sscanf(pci_bdf, "%x:%x.%d", &bus, &dev, &fun);
-    pci_bdf_int = bus * 256 + dev * 8 + fun;
-    /* get this from the configuration */
-    error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+
+    // loop through pci devices
+    int idx = 0;
+    dev = 0;
+    bus = 0;
+    fun = 0;
+    for (idx=0;idx<=256;idx++) { // up to 256 buses
+      bus = idx;
+      pci_bdf_int = bus * 256 + dev * 8 + fun;
+      error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+
+      for (int i=0;i<=32;i++) { // up to 32 devices on a bus
+        dev = i;
+        pci_bdf_int = bus * 256 + dev * 8 + fun;
+        error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+
+        for (int j=0;j<8;j++) { // functions 0-7
+          fun = idx;
+          pci_bdf_int = bus * 256 + dev * 8 + fun;
+          error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+          //
+          if (error != 6) {
+            printf("Probe: %x:%x.%d = %i\n",bus,dev,fun,error);
+          }
+        }
+      }
+    }
+    printf("Scan done\n");
+
+
+    //sscanf(pci_bdf, "%x:%x.%d", &bus, &dev, &fun);
+    //pci_bdf_int = bus * 256 + dev * 8 + fun;
+    ///* get this from the configuration */
+    //printf("Getting IO space %s\n",pci_bdf);
+    //error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+
+
     assert(!error);
 
     /* Save a pointer to the original get_cap function for our vspace */
