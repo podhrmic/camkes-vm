@@ -13,8 +13,15 @@
 #include <autoconf.h>
 #include <configurations/vm.h>
 
+#include <rumprun_camkes.h>
+import <rumprun.camkes>;
+
 component Init0 {
     VM_INIT_DEF()
+}
+
+component rumprun {
+    RUMPRUN_COMPONENT_DEFINITION()
 }
 
 component VM {
@@ -22,6 +29,10 @@ component VM {
     composition {
         VM_COMPOSITION_DEF()
         VM_PER_VM_COMP_DEF(0)
+
+     component rumprun_platform_layer rrpl;
+     component rumprun hello;
+     RUMPRUN_META_CONNECTION(hello, rrpl)
     }
 
     configuration {
@@ -36,5 +47,8 @@ component VM {
         vm0.kernel_relocs = KERNEL_IMAGE;
         vm0.initrd_image = ROOTFS;
         vm0.iospace_domain = 0x0f;
+
+    hello.rump_config = {"cmdline": "hello World!" };
+    RUMPRUN_COMPONENT_CONFIGURATION(hello, 0)
     }
 }

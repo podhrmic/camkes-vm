@@ -23,6 +23,9 @@ VM_CONFIG := $(patsubst "%",%, ${CONFIG_APP_CAMKES_VM_CONFIG})
 VM_NUM_VM ?= $(patsubst "%",%, ${CONFIG_APP_CAMKES_VM_NUM_VM})
 ADL ?= vm.camkes
 
+PROJECT_BASE := $(PWD)
+RUMPRUN_BASE_DIR := $(PWD)/libs/rumprun
+
 include TimeServer/TimeServer.mk
 include SerialServer/SerialServer.mk
 include RTC/RTC.mk
@@ -36,11 +39,12 @@ include FileServer/FileServer.mk
 include Init/Init.mk
 include StringReverse/StringReverse.mk
 include Firewall/Firewall.mk
+include RumprunHello/RumprunHello.mk
 
 # We want to run C99
 CFLAGS += -std=gnu99 "-DCAMKES_VM_CONFIG=${VM_CONFIG}" -I${SOURCE_DIR}/configurations -I${SOURCE_DIR}/../../components/VM/configurations
 
-CAMKES_FLAGS += --cpp-flag=-I${SOURCE_DIR}/configurations --cpp-flag=-I${SOURCE_DIR}/../../components/VM --cpp-flag="-DCAMKES_VM_CONFIG=${VM_CONFIG}" --cache-dir=${PWD}/build/camkes_cache
+CAMKES_FLAGS += --cpp-flag=-I${SOURCE_DIR}/configurations --cpp-flag=-I${SOURCE_DIR}/../../components/VM --cpp-flag="-DCAMKES_VM_CONFIG=${VM_CONFIG}" --cache-dir=${PWD}/build/camkes_cache --cpp-flag=-I${RUMPRUN_BASE_DIR}/platform/sel4/camkes/ 
 
 # Include the per configuration Makefile. This should include the common
 # camkes.mk where appropriate

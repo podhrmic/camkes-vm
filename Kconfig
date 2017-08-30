@@ -43,6 +43,7 @@ menu "Libraries"
     source "libs/libethdrivers/Kconfig"
     source "libs/liblwip/Kconfig"
     source "libs/libpicotcp/Kconfig"
+    source "libs/rumprun/Kconfig"
 endmenu
 
 menu "Applications"

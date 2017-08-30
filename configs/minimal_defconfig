@@ -190,6 +190,8 @@ CONFIG_LIB_ETHDRIVER_NUM_PREALLOCATED_BUFFERS=512
 CONFIG_LIB_ETHDRIVER_PREALLOCATED_BUF_SIZE=2048
 CONFIG_LIB_LWIP=y
 # CONFIG_LIB_PICOTCP is not set
+CONFIG_RUMPRUN=y
+CONFIG_HAVE_RUMPRUN=y
 
 #
 # Applications
@@ -226,7 +228,7 @@ CONFIG_APP_CAMKES_VM_GUEST_DMA_IOMMU=y
 CONFIG_CAMKES_DEFAULT_STACK_SIZE=16384
 CONFIG_CAMKES_DEFAULT_HEAP_SIZE=0
 CONFIG_CAMKES_CPP=y
-CONFIG_CAMKES_IMPORT_PATH="${PWD}/projects/vm/components ${PWD}/projects/vm/interfaces ${PWD}/projects/global-components/interfaces ${PWD}/projects/global-components/components"
+CONFIG_CAMKES_IMPORT_PATH="${PWD}/projects/vm/components ${PWD}/projects/vm/interfaces ${PWD}/projects/global-components/interfaces ${PWD}/projects/global-components/components ${PWD}/libs/rumprun/platform/sel4/camkes"
 CONFIG_CAMKES_DEFAULT_PRIORITY=100
 CONFIG_CAMKES_DEFAULT_AFFINITY=0
 CONFIG_CAMKES_ERROR_HANDLER_CONFIGURABLE=y
