@@ -25,6 +25,7 @@ ADL ?= vm.camkes
 
 PROJECT_BASE := $(PWD)
 RUMPRUN_BASE_DIR := $(PWD)/libs/rumprun
+all: default
 
 include TimeServer/TimeServer.mk
 include SerialServer/SerialServer.mk
