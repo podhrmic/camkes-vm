@@ -133,6 +133,7 @@ static void init_system(void) {
     sel4utils_reserve_range_no_alloc(&vspace, &muslc_brk_reservation_memory, BRK_VIRTUAL_SIZE, seL4_AllRights, 1, &muslc_brk_reservation_start);
     muslc_this_vspace = &vspace;
     muslc_brk_reservation = (reservation_t){.res = &muslc_brk_reservation_memory};
+    printf("Ethdriver init system complete\n");
 }
 
 static void eth_tx_complete(void *iface, void *cookie) {
@@ -156,6 +157,7 @@ static uintptr_t eth_allocate_rx_buf(void *iface, size_t buf_size, void **cookie
 }
 
 static client_t *detect_client(void *buf, unsigned int len) {
+    printf("Ethdriver detect clikent\n");
     if (len < 6) {
         return NULL;
     }
@@ -198,6 +200,7 @@ static int is_multicast(void *buf, unsigned int len) {
 }
 
 static void give_client_buf(client_t *client, void *cookie, unsigned int len) {
+    printf("Ethdriver give client buf\n");
     client->rx[client->rx_head] = (pending_rx_t){cookie,len, 0};
     client->rx_head = (client->rx_head + 1) % CLIENT_RX_BUFS;
     if (client->should_notify) {
@@ -252,6 +255,7 @@ static struct raw_iface_callbacks ethdriver_callbacks = {
 };
 
 int client_rx(int *len) {
+    printf("Receiving data\n");
     int UNUSED err;
     if (!done_init) {
         return -1;
@@ -289,14 +293,17 @@ int client_rx(int *len) {
 }
 
 int client_tx(int len) {
+    printf("Ethdriver client tx\n");
     int UNUSED error;
     if (!done_init) {
+    printf("Ethdriver client tx !done_init\n");
         return -1;
     }
     if (len > BUF_SIZE) {
         len = BUF_SIZE;
     }
     if (len < 12) {
+            printf("Ethdriver client tx len < 12\n");
         return -1;
     }
     int err = ETHIF_TX_COMPLETE;
@@ -326,10 +333,12 @@ int client_tx(int len) {
     }
     error = ethdriver_unlock();
 
+        printf("Ethdriver client tx returning err = %u, error = %u\n",err,error);
     return err;
 }
 
 void client_mac(uint8_t *b1, uint8_t *b2, uint8_t *b3, uint8_t *b4, uint8_t *b5, uint8_t *b6) {
+    printf("Ethdriver client mac\n");
     int UNUSED error;
     int id = client_get_sender_id();
     client_t *client = NULL;
@@ -351,11 +360,13 @@ void client_mac(uint8_t *b1, uint8_t *b2, uint8_t *b3, uint8_t *b4, uint8_t *b5,
 }
 
 void irq_handle() {
+    printf("Ethdriver irg handle\n");
     int UNUSED error;
     error = ethdriver_lock();
     eth_driver.i_fn.raw_handleIRQ(&eth_driver, 0);
     error = irq_acknowledge();
     error = ethdriver_unlock();
+    printf("Ethdriver irg handle done\n");
 }
 
 /* Returns the cap to the frame mapped to vaddr, assuming
@@ -389,6 +400,7 @@ static void* camkes_iommu_dma_alloc(void *cookie, size_t size,
 int ethif_init(struct eth_driver *eth_driver, ps_io_ops_t io_ops, void *config);
 
 void post_init(void) {
+    printf("HELLLO world\n");
     int error;
     int pci_bdf_int;
     int bus, dev, fun;
@@ -400,6 +412,43 @@ void post_init(void) {
     cspacepath_t iospace;
     error = vka_cspace_alloc_path(&vka, &iospace);
     assert(!error);
+
+//////////////////////////
+//found Probe: 0:4.0 = 0
+/*
+printf("Scan initi\n");
+    // loop through pci devices
+    int idx = 0;
+    dev = 0;
+    bus = 0;
+    fun = 0;
+    for (idx=0;idx<=256;idx++) { // up to 256 buses
+      bus = idx;
+      pci_bdf_int = bus * 256 + dev * 8 + fun;
+      error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+
+      for (int i=0;i<=32;i++) { // up to 32 devices on a bus
+        dev = i;
+        pci_bdf_int = bus * 256 + dev * 8 + fun;
+        error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+
+        for (int j=0;j<8;j++) { // functions 0-7
+          fun = j;
+          pci_bdf_int = bus * 256 + dev * 8 + fun;
+          error = simple_get_iospace(&camkes_simple, iospace_id, pci_bdf_int, &iospace);
+          //
+          if (error != 6) {
+            printf("Probe: %x:%x.%d = %i\n",bus,dev,fun,error);
+          }
+        }
+      }
+    }
+  printf("Scan done\n");
+*/
+
+
+
+// s==========================
     sscanf(pci_bdf, "%x:%x.%d", &bus, &dev, &fun);
     pci_bdf_int = bus * 256 + dev * 8 + fun;
     /* get this from the configuration */
@@ -463,4 +512,6 @@ void post_init(void) {
     done_init = 1;
     error = irq_acknowledge();
     error = ethdriver_unlock();
+
+    printf("Done init\n");
 }
