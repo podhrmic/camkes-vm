@@ -258,11 +258,12 @@ static struct raw_iface_callbacks ethdriver_callbacks = {
 int client_rx(int *len) {
     int UNUSED err;
     if (!done_init) {
-    printf("Receiving data: uninit\n");
+    printf("Ethdriver client rx: Receiving data: uninit\n");
         return -1;
     }
     int ret;
     int id = client_get_sender_id();
+    printf("Ethdriver client rx: client id = %i\n",id);
     client_t *client = NULL;
     for (int i = 0; i < num_clients; i++) {
         if (clients[i].client_id == id) {
@@ -271,11 +272,12 @@ int client_rx(int *len) {
     }
     assert(client);
     void *packet = client->dataport;
-    err = ethdriver_lock();
+    err = ethdriver_lock(); 
     if (client->rx_head == client->rx_tail) {
         client->should_notify = 1;
+        printf("Ethdriver client rx: should notify =  %u\n",client->should_notify);
         err = ethdriver_unlock();
-        //printf("Receiving data: error\n");
+        printf("Ethdriver client rx: Receiving data: error, returning.\n");
         return -1;
     }
     pending_rx_t rx = client->rx[client->rx_tail];
@@ -288,13 +290,16 @@ int client_rx(int *len) {
 
     if (client->rx_tail == client->rx_head) {
         client->should_notify = 1;
+        printf("Ethdriver client rx: should notify =  %u\n",client->should_notify);
         ret = 0;
     } else {
         ret = 1;
     }
     rx_bufs[num_rx_bufs] = rx.buf;
     num_rx_bufs++;
+    printf("Ethdriver client rx: num_rx_bufs =  %u\n",num_rx_bufs);
     err = ethdriver_unlock();
+    printf("Ethdriver client rx: ret =  %u\n",ret);
     return ret;
 }
 
@@ -314,9 +319,9 @@ int client_tx(int len) {
     }
     int err = ETHIF_TX_COMPLETE;
     int id = client_get_sender_id();
-    printf("Client id = %i\n",id);
+    printf("Ethdriver client tx:Client id = %i\n",id);
     client_t *client = NULL;
-    printf("Num clients = %i\n",num_clients); 
+    printf("Ethdriver client tx:Num clients = %i\n",num_clients); 
     for (int i = 0; i < num_clients; i++) {
         if (clients[i].client_id == id) {
             client = &clients[i];
@@ -326,7 +331,7 @@ int client_tx(int len) {
     void *packet = client->dataport;
     error = ethdriver_lock();
     /* silently drop packets */
-    printf("client->num_tx = %u\n",client->num_tx);
+    printf("Ethdriver client tx:client->num_tx = %u\n",client->num_tx);
     if (client->num_tx != 0) {
         client->num_tx --;
         tx_buf_t *tx_buf = client->tx[client->num_tx];
@@ -335,7 +340,7 @@ int client_tx(int len) {
         memcpy(tx_buf->buf + 6, client->mac, 6);
         /* queue up transmit */
         err = eth_driver.i_fn.raw_tx(&eth_driver, 1, (uintptr_t*)&(tx_buf->buf), (unsigned int*)&len, tx_buf);
-        printf("enquee err = %u, ETHIF_TX_ENQUEUED=%u\n",err, ETHIF_TX_ENQUEUED); 
+        printf("Ethdriver client tx:enquee err = %u, ETHIF_TX_ENQUEUED=%u\n",err, ETHIF_TX_ENQUEUED); 
         if (err != ETHIF_TX_ENQUEUED){
             /* Free the internal tx buffer in case tx fails. Up to the client to retry the trasmission */
             client->num_tx++; 
@@ -343,7 +348,7 @@ int client_tx(int len) {
     }
     error = ethdriver_unlock();
 
-    printf("Ethdriver client tx returning err = %u, error = %u\n",err,error);
+    printf("Ethdriver client tx: returning err = %u, error = %u\n",err,error);
     return err;
 }
 

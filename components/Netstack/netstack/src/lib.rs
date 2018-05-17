@@ -158,6 +158,9 @@ fn main() {
       let res = sel4_eth_transmit(&mut v.as_mut_slice());
       unsafe{ printf(format!("Netstack: eth transmit result={}\n\0",res).as_ptr() as *const i8); }
 
+
+      let res = sel4_eth_receive();
+      unsafe{ printf(format!("Netstack: eth receive result={}\n\0",res).as_ptr() as *const i8); }
     }
 
     }
