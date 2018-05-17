@@ -14,6 +14,7 @@ import <Ethdriver.camkes>;
 
 component Netstack {
     uses Ethdriver ethdriver;
-    emits HasData dummy;
-    consumes HasData ethdriver_has_data;
+//    emits HasData dummy;
+//    consumes HasData ethdriver_has_data;
+    control;
 }

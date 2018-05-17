@@ -1,9 +1,7 @@
 extern crate smoltcp;
 
-
-use std::str;
 use std::collections::BTreeMap;
-use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr};
+use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, IpEndpoint};
 use smoltcp::iface::{EthernetInterfaceBuilder, NeighborCache};
 use smoltcp::socket::SocketSet;
 use smoltcp::socket::{UdpSocketBuffer, UdpSocket, UdpPacketMetadata};
@@ -20,10 +18,7 @@ extern "C" {
 #[no_mangle]
 pub extern "C" fn run() -> isize {
     unsafe{ printf(b"Hello from Rust, starting main\n\0".as_ptr() as *const i8); }
-
-
     main();
-
     unsafe{ printf(b"Main done\n\0".as_ptr() as *const i8); }
     0
 }
@@ -36,7 +31,7 @@ extern "C" {
 /// Event callback I believe
 /// `badge` is not used
 #[no_mangle]
-pub extern "C" fn ethdriver_has_data_callback(_badge: u32) {}
+pub extern "C" fn ethdriver_has_data_callback(_badge: u32) {     unsafe{ printf(b"Has data callback!\n\0".as_ptr() as *const i8); } }
 
 /// Pass the device MAC address to the callee
 fn get_device_mac() -> EthernetAddress {
@@ -59,8 +54,7 @@ fn main() {
     unsafe{ printf(b"A\n\0".as_ptr() as *const i8); }
     let device = Sel4Device::new();
     unsafe{ printf(b"B\n\0".as_ptr() as *const i8); }
-    let mut neighbor_cache_entries = [None; 8];
-    let mut neighbor_cache = NeighborCache::new(&mut neighbor_cache_entries[..]);
+    let neighbor_cache = NeighborCache::new(BTreeMap::new());
     unsafe{ printf(b"C\n\0".as_ptr() as *const i8); }
     let udp1_rx_buffer = UdpSocketBuffer::new(vec![UdpPacketMetadata::EMPTY], vec![0; 64]);
     let udp1_tx_buffer = UdpSocketBuffer::new(vec![UdpPacketMetadata::EMPTY], vec![0; 128]);
@@ -72,45 +66,60 @@ fn main() {
     unsafe{ printf(b"E\n\0".as_ptr() as *const i8); }
 
     let ethernet_addr = get_device_mac();
+    unsafe{ printf(format!("Ethaddr={}\n\0",ethernet_addr).as_ptr() as *const i8); }
+
     let ip_addrs = [IpCidr::new(IpAddress::v4(192, 168, 179, 2), 24)];
     let mut iface = EthernetInterfaceBuilder::new(device)
         .ethernet_addr(ethernet_addr)
         .neighbor_cache(neighbor_cache)
         .ip_addrs(ip_addrs)
         .finalize();
-
+    unsafe{ printf(b"F\n\0".as_ptr() as *const i8); }
     let mut sockets = SocketSet::new(vec![]);
     let udp1_handle = sockets.add(udp1_socket);
     let udp2_handle = sockets.add(udp2_socket);
+    unsafe{ printf(b"G\n\0".as_ptr() as *const i8); }
+
+    let mut ms = 1;
 
     loop {
-        let timestamp = Instant::now();
+// we don't have system time:-(
+//        let timestamp = Instant::now();
+        ms +=1;
+
+    if (ms % 100000) == 0 {
+      unsafe{ printf(format!("Poll time: {}\n\0",ms).as_ptr() as *const i8); }
+    }
+    
+
+        let timestamp = Instant::from_millis(ms);
         iface.poll(&mut sockets, timestamp).expect("poll error");
 
         // udp:6969: respond "hello"
         {
             let mut socket = sockets.get::<UdpSocket>(udp1_handle);
             if !socket.is_open() {
+    unsafe{ printf(format!("socket is not open\n\0").as_ptr() as *const i8); }
                 socket.bind(6969).unwrap()
             }
 
+            if socket.can_send() {
+    unsafe{ printf(format!("socket can send()\n\0").as_ptr() as *const i8); }
+                let data = b"hello\n";
+                let endpoint = IpEndpoint::new(IpAddress::v4(192,168,179,1), 6666);
+                socket.send_slice(data, endpoint).unwrap();
+            }
+
+
             let client = match socket.recv() {
                 Ok((data, endpoint)) => {
-                    println!(
-                        "udp:6969 recv data: {:?} from {}",
-                        str::from_utf8(data.as_ref()).unwrap(),
-                        endpoint
-                    );
+    unsafe{ printf(format!("socket can recv(), endppoint={}\n\0",endpoint).as_ptr() as *const i8); }
                     Some(endpoint)
                 }
                 Err(_) => None,
             };
             if let Some(endpoint) = client {
                 let data = b"hello\n";
-                println!(
-                    "udp:6969 send data: {:?}",
-                    str::from_utf8(data.as_ref()).unwrap()
-                );
                 socket.send_slice(data, endpoint).unwrap();
             }
         }
@@ -125,11 +134,6 @@ fn main() {
             let mut rx_data = Vec::new();
             let client = match socket.recv() {
                 Ok((data, endpoint)) => {
-                    println!(
-                        "udp:6969 recv data: {:?} from {}",
-                        str::from_utf8(data.as_ref()).unwrap(),
-                        endpoint
-                    );
                     rx_data.extend_from_slice(data);
                     Some(endpoint)
                 }
@@ -141,14 +145,9 @@ fn main() {
                     let mut data = rx_data.split(|&b| b == b'\n').collect::<Vec<_>>().concat();
                     data.reverse();
                     data.extend(b"\n");
-                    println!(
-                        "udp:6942 send data: {:?}",
-                        str::from_utf8(data.as_ref()).unwrap()
-                    );
                     socket.send_slice(&data, endpoint).unwrap();
                 }
             }
         }
     }
 }
-

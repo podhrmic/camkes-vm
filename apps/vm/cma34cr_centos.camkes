@@ -31,25 +31,42 @@ component VM {
         /* Connect the netstack to the ethdriver */
         connection seL4Ethdriver ethdriver_con(from netstack.ethdriver, to ethdriver.client);
         /* Setup the netstack's global endpoint callback */
-        connection seL4GlobalAsynchCallback netstack_global_callback(from netstack.dummy, to netstack.ethdriver_has_data);
+        //connection seL4GlobalAsynchCallback netstack_global_callback(from netstack.dummy, to netstack.ethdriver_has_data);
 
     }
     configuration {
-
+/*
         ethdriver.simple = true;
         ethdriver.cnode_size_bits = 12;
-        ethdriver.iospaces = "0x1:0x0:0x4:0"; // <------------ may be different (corresponds to below)
+        ethdriver.iospaces = "0x1:0x0:0x3:0"; // <------------ may be different (corresponds to below)
         ethdriver.iospace_id = 0x1;
-        ethdriver.pci_bdf = "0:4.0"; // <------------ may be different
+        ethdriver.pci_bdf = "0:3.0"; // <------------ may be different
         ethdriver.simple_untyped20_pool = 2;
         ethdriver.heap_size = 0x10000;
         ethdriver.dma_pool = 0x200000;
 
-        HWEthdriver.mmio_paddr = 0xfebc0000;
+        HWEthdriver.mmio_paddr = 0xfeb80000;
         HWEthdriver.mmio_size = 0x20000;
         HWEthdriver.irq_irq_type = "pci";
         HWEthdriver.irq_irq_ioapic = 0;
         HWEthdriver.irq_irq_ioapic_pin = 11;
+        HWEthdriver.irq_irq_vector = 11;
+*/
+
+        ethdriver.simple = true;
+        ethdriver.cnode_size_bits = 12;
+        ethdriver.iospaces = "0x1:0x0:0x2:0"; // lspci from linux
+        ethdriver.iospace_id = 0x1; // this doesn't seem to matter as long as it is not 0 
+        ethdriver.pci_bdf = "0:2.0"; // lspci from linux
+        ethdriver.simple_untyped20_pool = 2;
+        ethdriver.heap_size = 0x10000;
+        ethdriver.dma_pool = 0x200000;
+
+        HWEthdriver.mmio_paddr = 0xfeb80000; // lspci from linux
+        HWEthdriver.mmio_size = 0x20000;
+        HWEthdriver.irq_irq_type = "pci";
+        HWEthdriver.irq_irq_ioapic = 0;
+        HWEthdriver.irq_irq_ioapic_pin = 11; // cat /proc/interrupts
         HWEthdriver.irq_irq_vector = 11;
 
         netstack.ethdriver_attributes = "1";

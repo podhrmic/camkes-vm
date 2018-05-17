@@ -210,6 +210,7 @@ static void give_client_buf(client_t *client, void *cookie, unsigned int len) {
 }
 
 static void eth_rx_complete(void *iface, unsigned int num_bufs, void **cookies, unsigned int *lens) {
+    printf("eth_rx_complete\n");
     /* insert filtering here. currently everything just goes to one client */
     if (num_bufs != 1) {
         goto error;
@@ -255,9 +256,9 @@ static struct raw_iface_callbacks ethdriver_callbacks = {
 };
 
 int client_rx(int *len) {
-    printf("Receiving data\n");
     int UNUSED err;
     if (!done_init) {
+    printf("Receiving data: uninit\n");
         return -1;
     }
     int ret;
@@ -274,12 +275,17 @@ int client_rx(int *len) {
     if (client->rx_head == client->rx_tail) {
         client->should_notify = 1;
         err = ethdriver_unlock();
+        //printf("Receiving data: error\n");
         return -1;
     }
     pending_rx_t rx = client->rx[client->rx_tail];
     client->rx_tail = (client->rx_tail + 1) % CLIENT_RX_BUFS;
     memcpy(packet, rx.buf, rx.len);
     *len = rx.len;
+    if (rx.len > 0) {
+    printf("Received %u bytes of data\n", rx.len);
+}
+
     if (client->rx_tail == client->rx_head) {
         client->should_notify = 1;
         ret = 0;
