@@ -299,7 +299,7 @@ int client_rx(int *len) {
 }
 
 int client_tx(int len) {
-    printf("Ethdriver client tx\n");
+    printf("Ethdriver client tx, sending len=%i\n",len);
     int UNUSED error;
     if (!done_init) {
     printf("Ethdriver client tx !done_init\n");
@@ -314,7 +314,9 @@ int client_tx(int len) {
     }
     int err = ETHIF_TX_COMPLETE;
     int id = client_get_sender_id();
+    printf("Client id = %i\n",id);
     client_t *client = NULL;
+    printf("Num clients = %i\n",num_clients); 
     for (int i = 0; i < num_clients; i++) {
         if (clients[i].client_id == id) {
             client = &clients[i];
@@ -324,6 +326,7 @@ int client_tx(int len) {
     void *packet = client->dataport;
     error = ethdriver_lock();
     /* silently drop packets */
+    printf("client->num_tx = %u\n",client->num_tx);
     if (client->num_tx != 0) {
         client->num_tx --;
         tx_buf_t *tx_buf = client->tx[client->num_tx];
@@ -332,6 +335,7 @@ int client_tx(int len) {
         memcpy(tx_buf->buf + 6, client->mac, 6);
         /* queue up transmit */
         err = eth_driver.i_fn.raw_tx(&eth_driver, 1, (uintptr_t*)&(tx_buf->buf), (unsigned int*)&len, tx_buf);
+        printf("enquee err = %u, ETHIF_TX_ENQUEUED=%u\n",err, ETHIF_TX_ENQUEUED); 
         if (err != ETHIF_TX_ENQUEUED){
             /* Free the internal tx buffer in case tx fails. Up to the client to retry the trasmission */
             client->num_tx++; 
@@ -339,7 +343,7 @@ int client_tx(int len) {
     }
     error = ethdriver_unlock();
 
-        printf("Ethdriver client tx returning err = %u, error = %u\n",err,error);
+    printf("Ethdriver client tx returning err = %u, error = %u\n",err,error);
     return err;
 }
 

@@ -1,3 +1,6 @@
+#![feature(libc)]
+#![feature(lang_items)]
+extern crate libc;
 extern crate smoltcp;
 
 use std::collections::BTreeMap;
@@ -8,6 +11,9 @@ use smoltcp::socket::{UdpSocketBuffer, UdpSocket, UdpPacketMetadata};
 use smoltcp::time::Instant;
 use smoltcp::phy::Sel4Device;
 
+
+use libc::{c_void, memcpy};
+use std::{io, mem};
 
 #[no_mangle]
 extern "C" {
@@ -32,6 +38,54 @@ extern "C" {
 /// `badge` is not used
 #[no_mangle]
 pub extern "C" fn ethdriver_has_data_callback(_badge: u32) {     unsafe{ printf(b"Has data callback!\n\0".as_ptr() as *const i8); } }
+
+
+extern "C" {
+    // to match C signatures
+    static ethdriver_buf: *mut c_void;
+    fn ethdriver_tx(len: i32) -> i32;
+    fn ethdriver_rx(len: *mut i32) -> i32;
+}
+
+/// A backend for smoltcp, to be called from its `phy` module
+/// Transmits a slice from the client application by copying data
+/// into `ethdriver_buf` and consequently calling `ethdriver_tx()`
+/// Returns either number of transmitted bytes or an error
+fn sel4_eth_transmit(buf: &mut [u8]) -> i32 {
+    unsafe {
+        let local_buf_ptr = mem::transmute::<*mut u8, *mut c_void>(buf.as_mut_ptr());
+        assert!(!ethdriver_buf.is_null());
+        memcpy(ethdriver_buf, local_buf_ptr, buf.len());
+        unsafe{ printf(format!("Ethdriver tx sending {} bytes\n\0",buf.len()).as_ptr() as *const i8); }          
+        ethdriver_tx(buf.len() as i32)
+    }
+}
+
+/// A backend for smoltcp, to be called from its `phy` module
+/// Attempt to receive data from the ethernet driver
+/// Call `ethdriver_rx` and cast the results.
+/// Returns either a vector of received bytes, or an error
+fn sel4_eth_receive() -> i32 {
+    let mut len = 0;
+    unsafe {
+        let res = ethdriver_rx(&mut len);
+        unsafe{ printf(format!("Ethdriver rx len={}\n\0",len).as_ptr() as *const i8); }  
+        res   
+/*
+        assert!(!ethdriver_buf.is_null());
+        // create a slice of length `len` from `ethdriver_buf`
+        let local_buf_ptr = mem::transmute::<*mut c_void, *mut u8>(ethdriver_buf);
+        let slice = slice::from_raw_parts(local_buf_ptr, len as usize);
+
+        // instead of dealing with the borrow checker, copy slice in to a vector
+        let mut vec = Vec::new();
+        vec.extend_from_slice(slice);
+        Ok(vec)
+*/
+    }
+}
+
+
 
 /// Pass the device MAC address to the callee
 fn get_device_mac() -> EthernetAddress {
@@ -80,8 +134,35 @@ fn main() {
     let udp2_handle = sockets.add(udp2_socket);
     unsafe{ printf(b"G\n\0".as_ptr() as *const i8); }
 
-    let mut ms = 1;
+    let mut ms: u64 = 1;
 
+    loop {
+      ms +=1;
+    if (ms % 100000000) == 0 {
+      unsafe{ printf(format!("Netstack: Poll time: {}\n\0",ms).as_ptr() as *const i8); }
+      unsafe{ printf(format!("Netstack: Sending data\n\0").as_ptr() as *const i8); }
+      // send ARP request
+      let mut v = vec![ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // destination multicast
+                        0x52, 0x54, 0x00, 0x12, 0x34, 0x56, // source MAC (my)
+                        0x08, 0x06, // type ARP
+                        0x00, 0x01, // hw type Ethernet
+                        0x08, 0x00, // Ipv4
+                        0x06, // hw size
+                        0x04, // protocol size
+                        0x00, 0x01, // opcode request
+                        0x52, 0x54, 0x00, 0x12, 0x34, 0x56, // sender mac
+                        0xc0, 0xa8, 0xb3, 0x32, // sender IP  192.168.179.50
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // target mac
+                        0xc0, 0xa8, 0xb3, 0x01, // target IP 192.168.179.1
+                        ];
+      let res = sel4_eth_transmit(&mut v.as_mut_slice());
+      unsafe{ printf(format!("Netstack: eth transmit result={}\n\0",res).as_ptr() as *const i8); }
+
+    }
+
+    }
+
+/*
     loop {
 // we don't have system time:-(
 //        let timestamp = Instant::now();
@@ -150,4 +231,5 @@ fn main() {
             }
         }
     }
+*/
 }

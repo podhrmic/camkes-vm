@@ -73,7 +73,7 @@ component VM {
         netstack.ethdriver_shmem_size = 0x1000;
         netstack.ethdriver_global_endpoint = "netstack";
         netstack.ethdriver_badge = "134217729";
-        netstack.ethdriver_mac = [6, 0, 0, 11, 12, 13];
+        netstack.ethdriver_mac = [0x52, 0x54, 0x00, 0x12, 0x34, 0x56]; // to match sample rustwall test
         netstack.ethdriver_has_data_global_endpoint = "netstack";
 
         //netstack.udp_ip_addr = "192.168.179.2";
