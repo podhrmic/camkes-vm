@@ -9,7 +9,7 @@ use smoltcp::iface::{EthernetInterfaceBuilder, NeighborCache};
 use smoltcp::socket::SocketSet;
 use smoltcp::socket::{UdpSocketBuffer, UdpSocket, UdpPacketMetadata};
 use smoltcp::time::Instant;
-use smoltcp::phy::Sel4Device;
+
 
 
 use libc::{c_void, memcpy};
@@ -105,8 +105,8 @@ fn get_device_mac() -> EthernetAddress {
 
 
 fn main() {
-    unsafe{ printf(b"A\n\0".as_ptr() as *const i8); }
-    let device = Sel4Device::new();
+    //unsafe{ printf(b"A\n\0".as_ptr() as *const i8); }
+    //let device = Sel4Device::new();
     unsafe{ printf(b"B\n\0".as_ptr() as *const i8); }
     let neighbor_cache = NeighborCache::new(BTreeMap::new());
     unsafe{ printf(b"C\n\0".as_ptr() as *const i8); }
@@ -121,7 +121,7 @@ fn main() {
 
     let ethernet_addr = get_device_mac();
     unsafe{ printf(format!("Ethaddr={}\n\0",ethernet_addr).as_ptr() as *const i8); }
-
+/*
     let ip_addrs = [IpCidr::new(IpAddress::v4(192, 168, 179, 2), 24)];
     let mut iface = EthernetInterfaceBuilder::new(device)
         .ethernet_addr(ethernet_addr)
@@ -133,7 +133,7 @@ fn main() {
     let udp1_handle = sockets.add(udp1_socket);
     let udp2_handle = sockets.add(udp2_socket);
     unsafe{ printf(b"G\n\0".as_ptr() as *const i8); }
-
+*/
     let mut ms: u64 = 1;
 
     loop {
