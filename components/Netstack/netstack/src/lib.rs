@@ -109,7 +109,10 @@ fn main() {
     //let device = Sel4Device::new();
     unsafe{ printf(b"B\n\0".as_ptr() as *const i8); }
     let neighbor_cache = NeighborCache::new(BTreeMap::new());
+
     unsafe{ printf(b"C\n\0".as_ptr() as *const i8); }
+
+/*
     let udp1_rx_buffer = UdpSocketBuffer::new(vec![UdpPacketMetadata::EMPTY], vec![0; 64]);
     let udp1_tx_buffer = UdpSocketBuffer::new(vec![UdpPacketMetadata::EMPTY], vec![0; 128]);
     let udp1_socket = UdpSocket::new(udp1_rx_buffer, udp1_tx_buffer);
@@ -118,7 +121,7 @@ fn main() {
     let udp2_tx_buffer = UdpSocketBuffer::new(vec![UdpPacketMetadata::EMPTY], vec![0; 128]);
     let udp2_socket = UdpSocket::new(udp2_rx_buffer, udp2_tx_buffer);
     unsafe{ printf(b"E\n\0".as_ptr() as *const i8); }
-
+*/
     let ethernet_addr = get_device_mac();
     unsafe{ printf(format!("Ethaddr={}\n\0",ethernet_addr).as_ptr() as *const i8); }
 /*
