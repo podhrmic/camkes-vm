@@ -11,7 +11,11 @@ crate-type = ["staticlib"]
 default-features = false
 features = ["proto-ipv4", "proto-ipv6","phy-sel4",
   "socket-raw", "socket-icmp", "socket-udp", "socket-tcp"]
-path = "../../../../../projects/smoltcp"
+#path = "../../../../../projects/smoltcp"
+#path = "../../../../../projects/smoltcp"
+git = "https://github.com/GaloisInc/smoltcp"
+branch =  "seL4"
+
 
 [replace]
 "libc:0.2.40" = { git = 'https://github.com/GaloisInc/rs_liblibc.git' }

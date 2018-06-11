@@ -29,14 +29,16 @@ pub extern "C" fn run() -> isize {
 }
 
 extern "C" {
-    fn ethdriver_mac(b1: *mut u8, b2: *mut u8, b3: *mut u8, b4: *mut u8, b5: *mut u8, b6: *mut u8);
+    fn client_mac(b1: *mut u8, b2: *mut u8, b3: *mut u8, b4: *mut u8, b5: *mut u8, b6: *mut u8);
 }
 
 
 /// Event callback I believe
 /// `badge` is not used
 #[no_mangle]
-pub extern "C" fn ethdriver_has_data_callback(_badge: u32) {}
+pub extern "C" fn client_has_data_callback(_badge: u32) {
+ // do something
+}
 
 /// Pass the device MAC address to the callee
 fn get_device_mac() -> EthernetAddress {
@@ -48,7 +50,7 @@ fn get_device_mac() -> EthernetAddress {
     let mut b6: u8 = 0;
 
     unsafe {
-        ethdriver_mac(&mut b1, &mut b2, &mut b3, &mut b4, &mut b5, &mut b6);
+        client_mac(&mut b1, &mut b2, &mut b3, &mut b4, &mut b5, &mut b6);
     }
 
     EthernetAddress([b1, b2, b3, b4, b5, b6])
